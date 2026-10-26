@@ -18,8 +18,12 @@ Documentación interactiva (una vez ejecutando):
     - Swagger UI: http://localhost:8000/docs
     - ReDoc:     http://localhost:8000/redoc
 """
-
+import logging
 from fastapi import FastAPI
+from pydantic import BaseModel
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Instancia de la aplicación
@@ -34,6 +38,9 @@ app = FastAPI(
     # docs_url="/api/docs",
 )
 
+class SaludoRequest(BaseModel):
+    nombre: str
+    edad: int
 
 # ---------------------------------------------------------------------------
 # Endpoint raíz
@@ -44,18 +51,17 @@ app = FastAPI(
 #   - El tipo de retorno (dict → JSON)
 #   - El schema OpenAPI a partir del type hint de retorno
 @app.get("/")
-def read_root():
-    """
-    Endpoint raíz.
-    Retorna un mensaje de bienvenida.
+def read_root(name: str | None = None):
+    logger.info("Se consultó el endpoint raíz")
 
-    Demuestra:
-    - Decorador de ruta más simple posible
-    - Inferencia automática de tipo de respuesta (dict → JSON)
-    - Documentación automática generada desde el docstring y los tipos
-    """
+    if name:
+        return {"message": f"¡Hola, {name} desde FastAPI!"}
+
     return {"message": "¡Hola, mundo desde FastAPI!"}
 
+@app.get("/version")
+def version():
+    return {"version": "0.1.0"}
 
 # ---------------------------------------------------------------------------
 # Endpoint de salud
@@ -73,3 +79,10 @@ def health_check():
     de los endpoints de negocio.
     """
     return {"status": "ok", "service": "fastapi-hello"}
+
+
+@app.post("/saludos")
+def crear_saludo(datos: SaludoRequest):
+    return {
+        "message": f"¡Hola, {datos.nombre}! Tenés {datos.edad} años."
+    }
